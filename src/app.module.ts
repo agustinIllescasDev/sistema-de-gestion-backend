@@ -3,6 +3,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import {ArticulosModule} from 'src/modules/articulos/articulos.module'
+import { CategoriasModule } from './modules/categorias/categorias.module';
+import { AdministradoresModule } from './modules/administradores/administradores.module';
+
 
 @Module({
   imports: [
@@ -33,11 +37,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
           password: pass,
           database: name,
           autoLoadEntities: true,
+          //synchronize: true,
           synchronize: config.get('NODE_ENV') === 'development',
           logging: ['error'],
+          //logging:true,
         };
       },
-    }), // Se cerró correctamente el paréntesis y llave del TypeOrmModule
+    }),
+    ArticulosModule,
+    CategoriasModule,
+    AdministradoresModule,
   ],
   controllers: [AppController],
   providers: [AppService],
