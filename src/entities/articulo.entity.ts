@@ -11,10 +11,10 @@ export class Articulo {
     nombre: string;
 
     @Column({name: 'descripcion', type:'text', nullable: true})
-    descripcion: string;
+    descripcion: string | null;
 
     @Column({name: 'imagen',type:'varchar',length:255, nullable: true})
-    imagen: string;
+    imagen: string | null;
 
     @Column({name: 'estado' ,type:'enum' , enum: Estado, nullable:false,})
     estado: Estado
@@ -30,6 +30,9 @@ export class Articulo {
 
     @Column({name: 'fecha_venta', type: 'timestamp', nullable: true})
     fecha_venta: Date | null;
+
+    @Column({name:'porcentaje_ganancia', type: 'decimal', precision: 5, scale: 2, nullable: false})
+    porcentaje_ganancia: number;
 
     //relacion N - 1 entre Articulo y Categoria.
     @ManyToOne(
