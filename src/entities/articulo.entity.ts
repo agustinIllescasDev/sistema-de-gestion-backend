@@ -1,3 +1,5 @@
+//articulo.entity.ts
+
 import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn} from "typeorm" 
 import {Estado} from 'src/common/enums/estado-articulo.enum'
 import { Categoria } from "./categoria.entity";

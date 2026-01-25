@@ -1,11 +1,28 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+//articulos.service.ts
+
+
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import {Estado} from 'src/common/enums/estado-articulo.enum';
 import { Articulo } from 'src/entities/articulo.entity';
 import { Categoria } from 'src/entities/categoria.entity';
+import { Repository } from 'typeorm';
+import {CreateArticuloDto} from 'src/modules/articulos/dto/create-articulo.dto'
+import { UpdateArticuloDto } from './dto/update-articulo.dto';
 
 @Injectable()
 export class ArticulosService {
-    //Creacion del array con los valores del ENUM.
+
+
+    //Inyectar repositorios de typeorm
+    constructor(
+        @InjectRepository(Articulo)
+        private readonly articuloRepository: Repository<Articulo>,
+        @InjectRepository(Categoria)
+        private readonly categoriaRepository: Repository<Categoria>
+    ){}
+
+    //array con los valores del ENUM.
     private readonly estadosPermitidos = [Estado.DISPONIBLE,Estado.VENDIDO];
 
     //Validacion de estados permitidos.
@@ -75,6 +92,8 @@ export class ArticulosService {
         return precioBase + (precioBase* porcentaje_ganancia/100)
     } 
 
+
+    //Este metodo solo construye el objeto del articulo, el cual en el crud sera guardado.
     crearArticulo(data:{
         nombre: string,
         descripcion?: string,
@@ -84,8 +103,7 @@ export class ArticulosService {
         categoria: Categoria,
     }): Articulo{
         const articulo = new Articulo()
-
-        //Asignacion de valores enviados por el cliente
+        //Asignacion de valores
         articulo.nombre = data.nombre;
 
         if(data.descripcion !== undefined){
@@ -98,8 +116,6 @@ export class ArticulosService {
         
         articulo.precio_base = data.precio_base;
         articulo.porcentaje_ganancia = data.porcentaje_ganancia;
-        
-        //Asignacion de valores de dominio 
         articulo.precio_venta = this.calcularPrecioVenta(data.precio_base,data.porcentaje_ganancia)
         articulo.estado = Estado.DISPONIBLE;
         articulo.eliminado = false;
@@ -109,7 +125,7 @@ export class ArticulosService {
         return articulo;
     }
 
-    //Metodo para editar un articulo.
+    //Editar un articulo (solo retorna el objeto, no persiste los datos).
     editarArticulo(
         articulo:Articulo,
         data: {
@@ -166,11 +182,11 @@ export class ArticulosService {
             articulo.precio_venta = this.calcularPrecioVenta(articulo.precio_base,articulo.porcentaje_ganancia);
         }
 
-        //Retornamos el articulo editado.
+        //Retornamos el objeto de tipo articulo editado.
         return articulo;
     }
 
-    venderArticulo(
+    marcarComoVendido(
         articulo: Articulo,
         nuevoEstado: Estado
     ):Articulo {
@@ -191,6 +207,148 @@ export class ArticulosService {
         return articulo;
 
     }
-        
+ 
     
+    //CRUD
+
+    //Create
+    async crear(dto: CreateArticuloDto ): Promise<Articulo>{
+
+        //Recuperamos la categoria de la bd que tendrá el articulo una vez guardado.
+        const categoria = await this.categoriaRepository.findOneBy({
+            id_categoria: dto.id_categoria,
+        })
+
+        //Si no se encuentra lanzamos una excepcion.
+        if(!categoria){
+            throw new BadRequestException('Categoría inexistente.');
+        }
+        
+        //Construimos el objeto del articulo pasando la informacion del DTO al metodo crearArticulo().
+        const articulo = this.crearArticulo({
+            nombre: dto.nombre,
+            descripcion: dto.descripcion,
+            imagen: dto.imagen,
+            precio_base: dto.precio_base,
+            porcentaje_ganancia: dto.porcentaje_ganancia,
+            //foreign key para la categoria
+            categoria
+        }
+        );
+
+        //guardamos el registro (objeto) en la base de datos
+        return this.articuloRepository.save(articulo);
+    }
+
+    //Get
+    async obtenerTodos(){
+        const articulos = await this.articuloRepository.find({
+            where: {eliminado:false},
+            relations: ['categoria']
+        })
+
+        return articulos
+    }
+
+
+    //Get (id)
+    async obtenerArticuloPorId(id:number){
+        
+        const articulo = await this.articuloRepository.findOne({
+            where: {
+            id_articulo: id,
+            eliminado: false,
+            },
+            relations: ['categoria'],
+    })
+
+        if(!articulo){
+                throw new NotFoundException('Articulo no encontrado');
+        }
+
+        return articulo
+    }
+
+    //Update
+    async actualizarArticulo(dto:UpdateArticuloDto, id:number){
+        //Buscamos el articulo en la base de datos.
+        const articulo = await this.obtenerArticuloPorId(id);
+
+        let categoria;
+
+        //Si se recibe el id categoria desde el dto, la recuperamos desde la base de datos.
+        if (dto.id_categoria){
+            categoria = await this.categoriaRepository.findOneBy({
+                id_categoria: dto.id_categoria
+            });
+
+            //Si no se encuentra la categoria, se lanza un error.
+            if(!categoria){
+                throw new NotFoundException('Categoria no encontrada');
+            }
+        }
+
+        //Construimos el objeto del articulo con los datos actualizados.
+        const articuloEditado = this.editarArticulo(articulo, {
+            nombre: dto.nombre,
+            descripcion: dto.descripcion,
+            imagen: dto.imagen,
+            precio_base: dto.precio_base,
+            porcentaje_ganancia: dto.porcentaje_ganancia,
+            categoria
+        })
+
+        //Guardamos el registro en la base de datos.
+        return await this.articuloRepository.save(articuloEditado);
+    }
+
+
+    // Soft Delete
+    async eliminarArticulo (id: number){
+        //Buscamos el articulo a eliminar
+        const articulo = await this.articuloRepository.findOneBy({
+            id_articulo: id
+        })
+
+        //Si no se encuentra, lanzamos un error.
+
+        if(!articulo){
+            throw new NotFoundException('Articulo no encontrado');
+        }
+
+        //Validamos que aun no esté eliminado el articulo.
+        this.validarNoEliminado(articulo)
+
+        //Evitar eliminar articulos ya vendidos.
+        if (articulo.estado === Estado.VENDIDO) {
+            throw new BadRequestException('No se puede eliminar un artículo vendido');
+        }
+
+        //Aplicamos soft delete cambiando a true el campo 'eliminado'.
+        articulo.eliminado = true;
+
+        //Guardamos el cambio y retornamos el recurso actualizado.
+        return await this.articuloRepository.save(articulo);
+    }
+
+    //Vender articulo
+    async venderArticulo(id:number){
+        const articulo = await this.articuloRepository.findOneBy({
+            id_articulo:id
+        })
+
+        if (!articulo){
+            throw new NotFoundException('Articulo no encontrado.');
+        }
+
+        this.validarNoEliminado(articulo)
+        
+        if (articulo.estado === Estado.VENDIDO) {
+            throw new BadRequestException('No se puede vender un artículo ya vendido');
+        }
+
+        const articuloVendido = this.marcarComoVendido(articulo, Estado.VENDIDO);
+
+        return this.articuloRepository.save(articuloVendido);
+    }
 }
