@@ -1,6 +1,6 @@
 //articulo.entity.ts
 
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn} from "typeorm" 
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, DeleteDateColumn} from "typeorm" 
 import {Estado} from 'src/common/enums/estado-articulo.enum'
 import { Categoria } from "./categoria.entity";
 
@@ -27,8 +27,8 @@ export class Articulo {
     @Column({name: 'precio_venta', type: 'decimal', precision:10, scale: 2})
     precio_venta: number;
 
-    @Column({name: 'eliminado', type: 'boolean', nullable:false, default: false})
-    eliminado: boolean;
+    @DeleteDateColumn({ name: 'deleted_at', select: false })
+    deletedAt: Date;
 
     @Column({name: 'fecha_venta', type: 'timestamp', nullable: true})
     fecha_venta: Date | null;

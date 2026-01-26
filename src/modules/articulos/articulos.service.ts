@@ -58,7 +58,7 @@ export class ArticulosService {
 
     //Validar que el artículo no esté eliminado antes intentar operaciones sobre él. 
     validarNoEliminado(articulo: Articulo){
-        if(articulo.eliminado){
+        if(articulo.deletedAt){
             throw new BadRequestException('No se pueden realizar operaciones sobre un artículo eliminado');
         }
     }
@@ -103,22 +103,15 @@ export class ArticulosService {
         categoria: Categoria,
     }): Articulo{
         const articulo = new Articulo()
+
         //Asignacion de valores
         articulo.nombre = data.nombre;
-
-        if(data.descripcion !== undefined){
-            articulo.descripcion = data.descripcion ?? null;
-        }
-        
-        if(data.imagen !== undefined){
-            articulo.imagen = data.imagen ?? null;
-        }
-        
+        articulo.descripcion = data.descripcion ?? null;
+        articulo.imagen = data.imagen ?? null;
         articulo.precio_base = data.precio_base;
         articulo.porcentaje_ganancia = data.porcentaje_ganancia;
         articulo.precio_venta = this.calcularPrecioVenta(data.precio_base,data.porcentaje_ganancia)
         articulo.estado = Estado.DISPONIBLE;
-        articulo.eliminado = false;
         articulo.fecha_venta = null;
         articulo.categoria = data.categoria;
 
@@ -241,13 +234,24 @@ export class ArticulosService {
     }
 
     //Get
-    async obtenerTodos(){
-        const articulos = await this.articuloRepository.find({
-            where: {eliminado:false},
-            relations: ['categoria']
+    async obtenerTodos(estado? :Estado , pagina: number = 1, limite: number = 10){
+
+        const salto = (pagina-1) * limite; //importante para no mostrar siempre los mismos registros, se muestran resultados desde el valor de esta variable en adelante.
+
+        const [articulos,total] = await this.articuloRepository.findAndCount({
+            where: estado ? {estado} : {}, //Si se recibe el estado en la url, se aplica el filtro por estado. Si no, se traen todos los articulos (que no esten eliminados).
+            take: limite, 
+            skip: salto,
+            relations: ['categoria'],
+            order: {id_articulo: 'DESC'} // 'DESC' para descendente (más nuevos primero)
         })
 
-        return articulos
+        return {
+            data: articulos, //Se retornan los articulos aplicando la paginacion.
+            total, //Retornamos la cantidad total de articulos para que el frontend sepa cuantos estamos mostrando y cuantos falta mostrar.
+            pagina, //Numero de pagina.
+            limite //Cantidad de elementos por pagina.
+        }
     }
 
 
@@ -255,10 +259,7 @@ export class ArticulosService {
     async obtenerArticuloPorId(id:number){
         
         const articulo = await this.articuloRepository.findOne({
-            where: {
-            id_articulo: id,
-            eliminado: false,
-            },
+            where: {id_articulo: id},
             relations: ['categoria'],
     })
 
@@ -305,16 +306,9 @@ export class ArticulosService {
 
     // Soft Delete
     async eliminarArticulo (id: number){
+
         //Buscamos el articulo a eliminar
-        const articulo = await this.articuloRepository.findOneBy({
-            id_articulo: id
-        })
-
-        //Si no se encuentra, lanzamos un error.
-
-        if(!articulo){
-            throw new NotFoundException('Articulo no encontrado');
-        }
+        const articulo = await this.obtenerArticuloPorId(id);
 
         //Validamos que aun no esté eliminado el articulo.
         this.validarNoEliminado(articulo)
@@ -324,24 +318,16 @@ export class ArticulosService {
             throw new BadRequestException('No se puede eliminar un artículo vendido');
         }
 
-        //Aplicamos soft delete cambiando a true el campo 'eliminado'.
-        articulo.eliminado = true;
+        //Aplicamos soft delete.
+        await this.articuloRepository.softDelete(id);
 
-        //Guardamos el cambio y retornamos el recurso actualizado.
-        return await this.articuloRepository.save(articulo);
+        //Retornamos mensage de exito en la operacion.
+        return { message: `Articulo ${id} eliminado correctamente` };
     }
 
     //Vender articulo
     async venderArticulo(id:number){
-        const articulo = await this.articuloRepository.findOneBy({
-            id_articulo:id
-        })
-
-        if (!articulo){
-            throw new NotFoundException('Articulo no encontrado.');
-        }
-
-        this.validarNoEliminado(articulo)
+        const articulo = await this.obtenerArticuloPorId(id);
         
         if (articulo.estado === Estado.VENDIDO) {
             throw new BadRequestException('No se puede vender un artículo ya vendido');
@@ -351,4 +337,25 @@ export class ArticulosService {
 
         return this.articuloRepository.save(articuloVendido);
     }
+
+    //Metodo 'restore' para deshacer soft delete de un articulo en caso de eliminacion por accidente.
+    async restoreArticulo (id: number){
+            const articulo = await this.articuloRepository.findOne({
+                where: {id_articulo: id},
+                withDeleted: true
+            });
+
+        if(!articulo){
+            throw new NotFoundException('Articulo no encontrado');
+        }
+
+        if (!articulo.deletedAt) {
+        throw new BadRequestException('El articulo no está eliminado');
+    }
+        
+        await this.articuloRepository.restore(id);
+
+        return `El articulo con id ${id} fue restaurado.`
+    }
+
 }
