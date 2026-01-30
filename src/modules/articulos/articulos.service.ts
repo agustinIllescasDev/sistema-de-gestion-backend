@@ -19,7 +19,9 @@ export class ArticulosService {
         @InjectRepository(Articulo)
         private readonly articuloRepository: Repository<Articulo>,
         @InjectRepository(Categoria)
-        private readonly categoriaRepository: Repository<Categoria>
+        private readonly categoriaRepository: Repository<Categoria>,
+
+        //private readonly reportesService: ReportesService
     ){}
 
     //array con los valores del ENUM.
@@ -205,7 +207,7 @@ export class ArticulosService {
     //CRUD
 
     //Create
-    async crear(dto: CreateArticuloDto ): Promise<Articulo>{
+    async crear(dto: CreateArticuloDto, file?: string): Promise<Articulo>{
 
         //Recuperamos la categoria de la bd que tendrá el articulo una vez guardado.
         const categoria = await this.categoriaRepository.findOneBy({
@@ -221,7 +223,7 @@ export class ArticulosService {
         const articulo = this.crearArticulo({
             nombre: dto.nombre,
             descripcion: dto.descripcion,
-            imagen: dto.imagen,
+            imagen: file,
             precio_base: dto.precio_base,
             porcentaje_ganancia: dto.porcentaje_ganancia,
             //foreign key para la categoria
@@ -325,6 +327,29 @@ export class ArticulosService {
         return { message: `Articulo ${id} eliminado correctamente` };
     }
 
+
+async restoreArticulo(id: number) {
+    //Buscamos el artículo incluyendo los eliminados (si no, find no lo encontrará)
+    const articulo = await this.articuloRepository.findOne({
+        where: { id_articulo: id },
+        withDeleted: true, // Crucial para encontrar registros con deletedAt
+    });
+
+    if (!articulo) {
+        throw new NotFoundException('Artículo no encontrado');
+    }
+
+    //Validar que realmente esté eliminado
+    if (!articulo.deletedAt) {
+        throw new BadRequestException('El artículo no está eliminado');
+    }
+
+    //Aplicar el restore (esto limpia la fecha en deletedAt)
+    await this.articuloRepository.restore(id);
+
+    return { message: `Articulo ${id} restaurado correctamente` };
+}
+
     //Vender articulo
     async venderArticulo(id:number){
         const articulo = await this.obtenerArticuloPorId(id);
@@ -338,24 +363,74 @@ export class ArticulosService {
         return this.articuloRepository.save(articuloVendido);
     }
 
-    //Metodo 'restore' para deshacer soft delete de un articulo en caso de eliminacion por accidente.
-    async restoreArticulo (id: number){
-            const articulo = await this.articuloRepository.findOne({
-                where: {id_articulo: id},
-                withDeleted: true
-            });
 
-        if(!articulo){
-            throw new NotFoundException('Articulo no encontrado');
+    async obtenerTodosSinPaginacion(estadoArticulo: Estado){
+       const articulos = await this.articuloRepository.find({
+        where: {estado : estadoArticulo},
+        relations: ['categoria']
+       })
+       return articulos
+    }
+
+    async obtenerDatosReporteStock(){
+        const articulos = await this.obtenerTodosSinPaginacion(Estado.DISPONIBLE);
+        if(!articulos || articulos.length === 0){
+            throw new BadRequestException('No se encontraron resultados');
         }
-
-        if (!articulo.deletedAt) {
-        throw new BadRequestException('El articulo no está eliminado');
-    }
         
-        await this.articuloRepository.restore(id);
+        // Configuramos el formateador
+        const formateador = new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+        minimumFractionDigits: 2
+        });
 
-        return `El articulo con id ${id} fue restaurado.`
+        return articulos.map(articulo => [
+            articulo.id_articulo,
+            articulo.nombre,
+            articulo.categoria?.nombre || 'Sin categoria',
+            formateador.format(articulo.precio_base),
+            formateador.format(articulo.precio_venta)])
     }
 
+
+    async obtenerDatosReporteVentas(){
+        const articulos = await this.obtenerTodosSinPaginacion(Estado.VENDIDO);
+        if(!articulos || articulos.length === 0){
+            throw new BadRequestException('No se encontraron resultados');
+        }
+        
+        // Configuramos el formateador
+        const formateador = new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+        minimumFractionDigits: 2
+        });
+
+        //Recorremos el array de articulos para obtener la informacion necesaria de cada registro.
+        return articulos.map(articulo => {
+            //Calculo de ganancia total.
+            const gananciaTotal = Number(articulo.precio_venta) - Number(articulo.precio_base);
+
+            //La libreria pdfkit debe recibir un array de strings para dibujarlos.
+            return [
+                articulo.id_articulo.toString(),
+                articulo.nombre,
+                articulo.categoria?.nombre || 'Sin categoria',
+                //Convertir fecha a string legible para el pdf
+                articulo.fecha_venta ? new Date(articulo.fecha_venta).toLocaleDateString('es-AR'): 'N/A',
+                formateador.format(articulo.precio_base),
+                formateador.format(articulo.precio_venta),
+                //Convertir el porcentaje a un string
+                `${articulo.porcentaje_ganancia} %`,
+                formateador.format(gananciaTotal)
+            ];
+            
+        });
+    }
+
+
+    async subirImagen(imagen: any){
+
+    }
 }

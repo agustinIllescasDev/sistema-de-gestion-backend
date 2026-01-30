@@ -10,7 +10,7 @@ import {ArticulosController} from './articulos.controller'
 @Module({
     imports: [
     // imports de entidades para typeORM
-    TypeOrmModule.forFeature([Articulo, Categoria])
+    TypeOrmModule.forFeature([Articulo, Categoria]),
     ],
     controllers: [ArticulosController],
     providers: [

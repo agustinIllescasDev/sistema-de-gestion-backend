@@ -27,7 +27,7 @@ export class Articulo {
     @Column({name: 'precio_venta', type: 'decimal', precision:10, scale: 2})
     precio_venta: number;
 
-    @DeleteDateColumn({ name: 'deleted_at', select: false })
+    @DeleteDateColumn({ name: 'deleted_at'})
     deletedAt: Date;
 
     @Column({name: 'fecha_venta', type: 'timestamp', nullable: true})
