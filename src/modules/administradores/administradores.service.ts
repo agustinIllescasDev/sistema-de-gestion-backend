@@ -41,8 +41,13 @@ export class AdministradoresService{
             password: passwordHash
         });
 
-        return await this.administradorRepository.save(administrador);
+        const guardado = await this.administradorRepository.save(administrador);
 
+        //'any' para que TS nos deje borrar la propiedad sin quejas
+        delete (guardado as any).password
+
+        //Retornamos el objeto creado, sin exponer innecesariamente la contraseña, aunque este hasheada, ya que el cliente no la necesita.
+        return guardado;
     }
 
     async cambiarContraseña(id:number ,dto: UpdateAdministradorDto){
