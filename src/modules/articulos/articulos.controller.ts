@@ -15,18 +15,22 @@ import * as path from 'path';
 export class ArticulosController {
     constructor(private readonly articulosService: ArticulosService){}
 
+
+    //Crear un articulo
+
+    //Recibir el archivo de imagen definiendo su nombre, ubicacion en el disco, tipo de archivo y tamaño maximo para poder guardarlo.
+    @Post()
     @UseInterceptors(FileInterceptor('imagen', {
         storage: diskStorage({
             destination: './uploads/articulos',
-            filename:(req,file,cb) => {
-                //const randomName = Array(32).fill(null).map(()=>(Math.round(Math.random() * 16)).toString(16)).join('');
+            filename:(_req,file,cb) => { //El aprametro 'req' nunca es leido, pero se necesita por el orden de los parametros que recibe multer.
                 const extension = path.extname(file.originalname)
                 const fileName = uuidv4();                
                 cb(null, `${fileName}${extension}`)
             }
         }),
 
-        fileFilter: (req, file, cb) => {
+        fileFilter: (_req, file, cb) => {
         // Definimos los formatos permitidos
         const allowedMimetypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
       
@@ -40,13 +44,14 @@ export class ArticulosController {
             fileSize: 1024 * 1024 * 10, //Limite de 10MB
         }
     }))
-    
-    @Post()
+
     async create(@Body() dto: CreateArticuloDto,
                 @UploadedFile() imagen?: Express.Multer.File){
         return this.articulosService.crear(dto, imagen?.filename);
     }
-    
+   
+
+    //Obtener todos los articulos
     @Get()
     async getAll(
         @Query('estado') estado?: Estado,
@@ -56,24 +61,59 @@ export class ArticulosController {
         return this.articulosService.obtenerTodos(estado, +pagina, +limite); //los valores que llegan desde la url son strings. Con '+' los convertimos a numero.
     }
 
+
+    //Obtener un articulo por su id
     @Get(':id')
     async getOneById(@Param('id', ParseIntPipe) id: number){
         return this.articulosService.obtenerArticuloPorId(id)
     }
 
+
+    //Actualizar un articulo
+
+    //Recibir el archivo de imagen definiendo su nombre, ubicacion en el disco, tipo de archivo y tamaño maximo para poder guardarlo.
     @Patch(':id')
-    update(
+    @UseInterceptors(FileInterceptor('imagen', {
+        storage: diskStorage({
+            destination: './uploads/articulos',
+            filename:(_req,file,cb) => { //El aprametro 'req' nunca es leido, pero se necesita por el orden de los parametros que recibe multer.
+                const extension = path.extname(file.originalname)
+                const fileName = uuidv4();                
+                cb(null, `${fileName}${extension}`)
+            }
+        }),
+
+        fileFilter: (_req, file, cb) => {
+        // Definimos los formatos permitidos
+        const allowedMimetypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+      
+            if (allowedMimetypes.includes(file.mimetype)) {
+                cb(null, true); // Aceptamos el archivo
+            } else {
+                cb(new BadRequestException('Solo se permiten imágenes (jpg, jpeg, png, webp)'), false);
+            }
+        },
+        limits: {
+            fileSize: 1024 * 1024 * 10, //Limite de 10MB
+        }
+    }))
+
+    async update(
         @Param('id', ParseIntPipe) id:number,
-        @Body() dto: UpdateArticuloDto) 
+        @Body() dto: UpdateArticuloDto,
+        @UploadedFile() imagen?: Express.Multer.File) 
     {
-        return this.articulosService.actualizarArticulo(dto, id);
+        return this.articulosService.actualizarArticulo(dto, id, imagen?.filename);
     }
 
+    //Eliminar articulo
     @Delete(':id')
     eliminar(@Param('id', ParseIntPipe)id:number){
         return this.articulosService.eliminarArticulo(id)
     }
 
+
+    //Vender articulo
     @Patch(':id/vender')
     vender(@Param('id', ParseIntPipe)id:number){
         return this.articulosService.venderArticulo(id);

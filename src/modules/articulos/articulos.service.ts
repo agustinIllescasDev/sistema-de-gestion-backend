@@ -9,6 +9,8 @@ import { Categoria } from 'src/entities/categoria.entity';
 import { Repository } from 'typeorm';
 import {CreateArticuloDto} from 'src/modules/articulos/dto/create-articulo.dto'
 import { UpdateArticuloDto } from './dto/update-articulo.dto';
+import { join } from 'path';
+import * as fs from 'fs';
 
 @Injectable()
 export class ArticulosService {
@@ -273,13 +275,13 @@ export class ArticulosService {
     }
 
     //Update
-    async actualizarArticulo(dto:UpdateArticuloDto, id:number){
+    async actualizarArticulo(dto:UpdateArticuloDto, id:number, file?: string){
         //Buscamos el articulo en la base de datos.
         const articulo = await this.obtenerArticuloPorId(id);
 
         let categoria;
 
-        //Si se recibe el id categoria desde el dto, la recuperamos desde la base de datos.
+        //Si se recibe el id categoria desde el dto, recuperamos la misma desde la base de datos.
         if (dto.id_categoria){
             categoria = await this.categoriaRepository.findOneBy({
                 id_categoria: dto.id_categoria
@@ -291,11 +293,21 @@ export class ArticulosService {
             }
         }
 
+        //Gestionar la actualizacion de imagen
+        if (file){
+            if (articulo.imagen){
+                this.borrarArchivoFisico(articulo.imagen);
+            }
+            articulo.imagen = file;
+        }
+
+
+
         //Construimos el objeto del articulo con los datos actualizados.
         const articuloEditado = this.editarArticulo(articulo, {
             nombre: dto.nombre,
             descripcion: dto.descripcion,
-            imagen: dto.imagen,
+            imagen: articulo.imagen ?? undefined,
             precio_base: dto.precio_base,
             porcentaje_ganancia: dto.porcentaje_ganancia,
             categoria
@@ -312,6 +324,11 @@ export class ArticulosService {
         //Buscamos el articulo a eliminar
         const articulo = await this.obtenerArticuloPorId(id);
 
+        //Validamos que el articulo exista en la base de datos
+        if(!articulo){
+            throw new NotFoundException('Articulo no encontrado');
+        }
+    
         //Validamos que aun no esté eliminado el articulo.
         this.validarNoEliminado(articulo)
 
@@ -320,11 +337,18 @@ export class ArticulosService {
             throw new BadRequestException('No se puede eliminar un artículo vendido');
         }
 
-        //Aplicamos soft delete.
+        //borrar archivo fisico de la imagen
+        if (articulo.imagen) {
+            this.borrarArchivoFisico(articulo.imagen);
+            articulo.imagen = null;
+            await this.articuloRepository.save(articulo)
+        }
+
+        //Aplicamos soft delete (Asigna la fecha actual al campo 'deletedAt'. Con Esto, typeorm detecta que se trata de un soft delete).
         await this.articuloRepository.softDelete(id);
 
-        //Retornamos mensage de exito en la operacion.
-        return { message: `Articulo ${id} eliminado correctamente` };
+        //Si todo salio bien, retornamos un mensaje de exito en la operacion.
+        return { message: `Articulo "${articulo.nombre}" eliminado correctamente` };
     }
 
 
@@ -362,7 +386,7 @@ async restoreArticulo(id: number) {
 
         return this.articuloRepository.save(articuloVendido);
     }
-
+    
 
     async obtenerTodosSinPaginacion(estadoArticulo: Estado){
        const articulos = await this.articuloRepository.find({
@@ -428,9 +452,19 @@ async restoreArticulo(id: number) {
             
         });
     }
+    
+    private borrarArchivoFisico(nombreImagen: string) {
+    if (!nombreImagen) return; // Si no hay imagen, no hacemos nada
 
-
-    async subirImagen(imagen: any){
-
+    const path = join(process.cwd(), 'uploads', 'articulos', nombreImagen);
+    
+    if (fs.existsSync(path)) {
+        try {
+            fs.unlinkSync(path);
+            console.log(`Archivo borrado: ${nombreImagen}`);
+        } catch (error) {
+            console.error(`Error al borrar el archivo ${nombreImagen}:`, error);
+        }
     }
+}
 }

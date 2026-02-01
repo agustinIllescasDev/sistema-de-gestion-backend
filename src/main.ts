@@ -3,11 +3,16 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import * as express from 'express';
-import { join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const uploadDir = './uploads/articulos';
+  if (!existsSync(uploadDir)) {
+    mkdirSync(uploadDir, { recursive: true });
+  }
+
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,
@@ -16,7 +21,7 @@ async function bootstrap() {
       enableImplicitConversion: true, // Para convertir los datos de multipart/form-data
   },
   }));
-  //app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
+
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
