@@ -371,7 +371,9 @@ async restoreArticulo(id: number) {
     //Aplicar el restore (esto limpia la fecha en deletedAt)
     await this.articuloRepository.restore(id);
 
-    return { message: `Articulo ${id} restaurado correctamente` };
+    return { message: `Articulo ${id} restaurado correctamente`,
+             nota: 'La imagen física fue eliminada permanentemente al borrar el artículo, por lo que deberá subir una nueva si lo desea.'
+        };
 }
 
     //Vender articulo
