@@ -1,16 +1,19 @@
 //reportes.controller.ts
 
-import { Controller, Get, Res } from "@nestjs/common";
+import { Controller, Get, Res, UseGuards } from "@nestjs/common";
 import express from 'express';
 import { ArticulosService } from "../articulos/articulos.service";
 import {ReportesService} from 'src/modules/reportes/reportes.service';
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 //Ruta
+@UseGuards(JwtAuthGuard)
 @Controller('pdf')
 export class ReportesController{
     constructor(private readonly articulosService: ArticulosService,
         private readonly reportesService: ReportesService
     ) {}
+
 
 @Get('stock')
 async descargarReporteStock(@Res() res: express.Response) {
@@ -22,6 +25,7 @@ async descargarReporteStock(@Res() res: express.Response) {
     const encabezados = ['Codigo', 'Nombre', 'Categoria','Precio Base', 'Precio Venta'];
     await this.reportesService.streamArchivoPDF(res, 'Reporte de artículos en stock', encabezados, filas);
 }
+
 
 @Get('ventas')
 async descargarReporteVentas(@Res() res: express.Response) {
@@ -37,7 +41,5 @@ async descargarReporteVentas(@Res() res: express.Response) {
                         
     await this.reportesService.streamArchivoPDF(res, 'Reporte de ventas', encabezados, filas);
 }
-
-
 
 }

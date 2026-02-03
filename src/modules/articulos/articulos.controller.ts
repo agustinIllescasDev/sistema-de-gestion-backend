@@ -1,6 +1,6 @@
 //articulos.controller.ts
 
-import { BadRequestException, Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import {ArticulosService} from './articulos.service'
 import {CreateArticuloDto} from 'src/modules/articulos/dto/create-articulo.dto'
 import { UpdateArticuloDto } from './dto/update-articulo.dto';
@@ -9,15 +9,15 @@ import {FileInterceptor} from '@nestjs/platform-express'
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-
+@UseGuards(JwtAuthGuard)
 @Controller('articulos')
 export class ArticulosController {
     constructor(private readonly articulosService: ArticulosService){}
 
 
     //Crear un articulo
-
     //Recibir el archivo de imagen definiendo su nombre, ubicacion en el disco, tipo de archivo y tamaño maximo para poder guardarlo.
     @Post()
     @UseInterceptors(FileInterceptor('imagen', {
@@ -61,7 +61,7 @@ export class ArticulosController {
         return this.articulosService.obtenerTodos(estado, +pagina, +limite); //los valores que llegan desde la url son strings. Con '+' los convertimos a numero.
     }
 
-
+    
     //Obtener un articulo por su id
     @Get(':id')
     async getOneById(@Param('id', ParseIntPipe) id: number){

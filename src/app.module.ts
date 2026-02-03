@@ -1,8 +1,6 @@
 //app.module.ts
 
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {ArticulosModule} from 'src/modules/articulos/articulos.module'
@@ -10,6 +8,7 @@ import { CategoriasModule } from './modules/categorias/categorias.module';
 import { AdministradoresModule } from './modules/administradores/administradores.module';
 import { ReportesModule } from './modules/reportes/reportes.module';
 import { MediaModule } from './modules/media/media.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -52,8 +51,9 @@ import { MediaModule } from './modules/media/media.module';
     AdministradoresModule,
     ReportesModule,
     MediaModule,
+    AuthModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

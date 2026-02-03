@@ -74,7 +74,33 @@ export class AdministradoresService{
         return await this.administradorRepository.update(id,{password: newPasswordHash});
     }
 
-    
+    async obtenerAdminPorSuEMail(email:string){
+        return await this.administradorRepository.findOne({
+            where: {mail : email}
+        });
+    }
 
+
+    async obtenerTodos(){
+        const administradores = await this.administradorRepository.find();
+        
+        if (!administradores) {
+            throw new NotFoundException('No hay resultados');
+        }
+
+        return administradores
+    }
+
+    async obtenerPorId(id: number){
+        const administrador = await this.administradorRepository.findOne({
+            where: {id_administrador: id}
+        })
+
+        if(!administrador){
+            throw new NotFoundException('Usuario no encontrado');
+        }
+
+        return administrador;
+    }
     
 }

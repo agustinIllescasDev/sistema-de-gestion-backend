@@ -348,7 +348,7 @@ export class ArticulosService {
         await this.articuloRepository.softDelete(id);
 
         //Si todo salio bien, retornamos un mensaje de exito en la operacion.
-        return { message: `Articulo "${articulo.nombre}" eliminado correctamente` };
+        return { message: `Articulo "${articulo.id_articulo}" eliminado correctamente` };
     }
 
 

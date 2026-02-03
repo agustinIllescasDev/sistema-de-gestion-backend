@@ -1,12 +1,9 @@
 //media.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, NotFoundException, Res } from '@nestjs/common';
+import { Controller, Get, Param, NotFoundException, Res } from '@nestjs/common';
 import type {Response} from 'express';
 import {join}  from 'path';
 import { existsSync } from 'fs';
 import { MediaService } from './media.service';
-import { CreateMediaDto } from './dto/create-media.dto';
-import { UpdateMediaDto } from './dto/update-media.dto';
-import { Not } from 'typeorm';
 
 @Controller('media')
 export class MediaController {

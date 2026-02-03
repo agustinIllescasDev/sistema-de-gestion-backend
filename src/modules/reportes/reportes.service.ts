@@ -6,9 +6,7 @@ import PDFDocument from 'pdfkit-table';
 
 @Injectable()
 export class ReportesService {
-    constructor(
-    ){}
-
+    
     async streamArchivoPDF(res: Response, titulo:string, encabezados: string[], filas: any[]){
         const doc = new PDFDocument({margin:30,size: 'A4'});
         doc.pipe(res);
