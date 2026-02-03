@@ -41,7 +41,8 @@ import { AuthModule } from './modules/auth/auth.module';
           autoLoadEntities: true,
           //synchronize: true,
           synchronize: config.get('NODE_ENV') === 'development',
-          logging: ['error'],
+
+          logging: config.get('NODE_ENV') === 'development' ? true : ['error'],
           //logging:true,
         };
       },

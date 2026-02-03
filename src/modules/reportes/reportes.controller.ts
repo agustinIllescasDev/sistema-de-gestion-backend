@@ -5,8 +5,10 @@ import express from 'express';
 import { ArticulosService } from "../articulos/articulos.service";
 import {ReportesService} from 'src/modules/reportes/reportes.service';
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { ApiBearerAuth } from '@nestjs/swagger';
 
-//Ruta
+
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('pdf')
 export class ReportesController{

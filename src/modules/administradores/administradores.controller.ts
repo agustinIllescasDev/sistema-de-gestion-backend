@@ -6,7 +6,10 @@ import { CreateAdministradorDto } from './dto/create-administrador.dto';
 import { UpdateAdministradorDto } from './dto/update-administrador.dto';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('administradores')
 export class AdministradoresController {
