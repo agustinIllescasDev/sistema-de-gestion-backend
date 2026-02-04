@@ -20,7 +20,7 @@ export class ReportesController{
 @Get('catalogo')
 async descargarCatalogo(@Res() res: express.Response) {
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=reporte-stock.pdf');
+    res.setHeader('Content-Disposition', 'inline; filename=reporte-stock.pdf');
 
     const filas = await this.articulosService.obtenerDatosReporteStock();
     
@@ -32,7 +32,7 @@ async descargarCatalogo(@Res() res: express.Response) {
 @Get('ventas')
 async descargarReporteVentas(@Res() res: express.Response) {
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=reporte-ventas.pdf');
+    res.setHeader('Content-Disposition', 'inline; filename=reporte-ventas.pdf');
 
     const filas = await this.articulosService.obtenerDatosReporteVentas();
     
