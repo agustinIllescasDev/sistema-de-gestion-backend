@@ -17,15 +17,15 @@ export class ReportesController{
     ) {}
 
 
-@Get('stock')
-async descargarReporteStock(@Res() res: express.Response) {
+@Get('catalogo')
+async descargarCatalogo(@Res() res: express.Response) {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=reporte-stock.pdf');
 
     const filas = await this.articulosService.obtenerDatosReporteStock();
     
-    const encabezados = ['Codigo', 'Nombre', 'Categoria','Precio Base', 'Precio Venta'];
-    await this.reportesService.streamArchivoPDF(res, 'Reporte de artículos en stock', encabezados, filas);
+    const encabezados = ['Codigo', 'Nombre', 'Categoria','Precio base', 'Precio de lista'];
+    await this.reportesService.streamArchivoPDF(res, 'Catalogo completo', encabezados, filas);
 }
 
 
