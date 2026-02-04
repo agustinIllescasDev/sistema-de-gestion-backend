@@ -11,6 +11,8 @@ import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery } from '@nestjs/swagger';
+
 
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
@@ -53,14 +55,22 @@ export class ArticulosController {
     }
    
 
-    //Obtener todos los articulos
+    //Obtener todos los articulos (con filtros y paginacion)
     @Get()
+    //documentacion de swagger
+    @ApiOperation({ summary: 'Obtener artículos con filtros de estado, búsqueda por nombre y paginación' })
+    @ApiQuery({ name: 'estado', required: false, enum: Estado, description: 'Filtrar por DISPONIBLE o VENDIDO' })
+    @ApiQuery({ name: 'search', required: false, type: String, description: 'Buscar artículos por nombre' })
+    @ApiQuery({ name: 'pagina', required: false, type: Number, description: 'Número de página' })
+    @ApiQuery({ name: 'limite', required: false, type: Number, description: 'Cantidad de registros por página' })
+
     async getAll(
         @Query('estado') estado?: Estado,
+        @Query('search') search?: string,
         @Query('pagina') pagina: number = 1, //Por defecto, devuelve la primer pagina de resultados.
-        @Query('limite') limite: number = 10, //Por defecto, devuelve 10 resultados por pagina.
+        @Query('limite') limite: number = 20, //Por defecto, devuelve 20 resultados por pagina.
     ){
-        return this.articulosService.obtenerTodos(estado, +pagina, +limite); //los valores que llegan desde la url son strings. Con '+' los convertimos a numero.
+        return this.articulosService.obtenerTodos(estado, search, +pagina, +limite); //los valores que llegan desde la url son strings. Con '+' los convertimos a numero.
     }
 
     

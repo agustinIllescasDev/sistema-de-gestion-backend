@@ -6,7 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {Estado} from 'src/common/enums/estado-articulo.enum';
 import { Articulo } from 'src/entities/articulo.entity';
 import { Categoria } from 'src/entities/categoria.entity';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import {CreateArticuloDto} from 'src/modules/articulos/dto/create-articulo.dto'
 import { UpdateArticuloDto } from './dto/update-articulo.dto';
 import { join } from 'path';
@@ -238,12 +238,25 @@ export class ArticulosService {
     }
 
     //Get
-    async obtenerTodos(estado? :Estado , pagina: number = 1, limite: number = 10){
+    async obtenerTodos(estado? :Estado ,search?: string, pagina: number = 1, limite: number = 20){
 
         const salto = (pagina-1) * limite; //importante para no mostrar siempre los mismos registros, se muestran resultados desde el valor de esta variable en adelante.
 
+        //Construir objeto de condiciones 'where'
+        const whereConditions: any = {};
+
+        // Si viene un estado, lo agregamos al filtro
+        if (estado){
+            whereConditions.estado = estado;
+        }
+
+        // Si viene un texto de búsqueda, aplicamos el ILike al nombre
+        if (search){
+            whereConditions.nombre = ILike(`%${search}%`);
+        }
+
         const [articulos,total] = await this.articuloRepository.findAndCount({
-            where: estado ? {estado} : {}, //Si se recibe el estado en la url, se aplica el filtro por estado. Si no, se traen todos los articulos (que no esten eliminados).
+            where: whereConditions,
             take: limite, 
             skip: salto,
             relations: ['categoria'],
