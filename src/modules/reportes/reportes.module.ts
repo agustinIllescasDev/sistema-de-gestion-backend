@@ -5,11 +5,10 @@ import { ReportesService } from './reportes.service';
 import { ReportesController } from './reportes.controller';
 import { ArticulosModule } from '../articulos/articulos.module';
 
-@Module({imports: [ArticulosModule], // <--- Para que funcione ArticulosService
-    controllers: [ReportesController], // <--- ESTO ACTIVA LA RUTA /pdf
-    providers: [ReportesService],
-    exports: [ReportesService]
+@Module({
+  imports: [ArticulosModule], // <--- Para que funcione ArticulosService
+  controllers: [ReportesController], // <--- ESTO ACTIVA LA RUTA /pdf
+  providers: [ReportesService],
+  exports: [ReportesService],
 })
-export class ReportesModule {
-
-}
+export class ReportesModule {}

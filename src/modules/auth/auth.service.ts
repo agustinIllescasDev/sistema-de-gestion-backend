@@ -40,7 +40,7 @@ export class AuthService {
 
         //firma y retorno
         return {
-            acces_token: this.jwtService.sign(payload)
+            access_token: this.jwtService.sign(payload)
         }        
     }
 }
