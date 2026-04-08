@@ -240,6 +240,7 @@ export class ArticulosService {
     search?: string,
     pagina: number = 1,
     limite: number = 20,
+    categoria?: number,
   ) {
     const salto = (pagina - 1) * limite; //importante para no mostrar siempre los mismos registros, se muestran resultados desde el valor de esta variable en adelante.
 
@@ -249,6 +250,10 @@ export class ArticulosService {
     // Si viene un estado, lo agregamos al filtro
     if (estado) {
       whereConditions.estado = estado;
+    }
+
+    if (categoria) {
+      whereConditions.categoria = { id_categoria: categoria };
     }
 
     // Si viene un texto de búsqueda, aplicamos el ILike al nombre

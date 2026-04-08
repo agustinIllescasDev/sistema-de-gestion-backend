@@ -27,6 +27,7 @@ import * as path from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { Categoria } from 'src/entities/categoria.entity';
 
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
@@ -112,13 +113,25 @@ export class ArticulosController {
     type: Number,
     description: 'Cantidad de registros por página',
   })
+  @ApiQuery({
+    name: 'categoria',
+    required: false,
+    description: 'Filtrar por categoría',
+  })
   async getAll(
     @Query('estado') estado?: Estado,
     @Query('search') search?: string,
     @Query('pagina') pagina: number = 1, //Por defecto, devuelve la primer pagina de resultados.
     @Query('limite') limite: number = 20, //Por defecto, devuelve 20 resultados por pagina.
+    @Query('categoria') categoria?: number,
   ) {
-    return this.articulosService.obtenerTodos(estado, search, +pagina, +limite); //los valores que llegan desde la url son strings. Con '+' los convertimos a numero.
+    return this.articulosService.obtenerTodos(
+      estado,
+      search,
+      +pagina,
+      +limite,
+      categoria,
+    );
   }
 
   //Obtener un articulo por su id
