@@ -6,13 +6,13 @@ import {IsString, IsNotEmpty} from 'class-validator'
 export class UpdateAdministradorDto {
     @IsNotEmpty({message: 'La conraseña actual no puede estar vacía.'})
     @IsString()
-    passwordActual: string;
+    passwordActual!: string;
 
     @IsNotEmpty({message: 'La nueva conraseña es obligatoria.'})
     @IsString()
-    passwordNueva: string;
+    passwordNueva!: string;
 
     @IsNotEmpty({message: 'Debes confirmar la contraseña.'})
     @IsString()
-    passwordConfirm: string;
+    passwordConfirm!: string;
 }

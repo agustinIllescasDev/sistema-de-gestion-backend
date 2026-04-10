@@ -5,7 +5,7 @@ import { IsNotEmpty,IsNumber,IsOptional,IsString, Max, Min} from 'class-validato
 export class CreateArticuloDto{
     @IsString()
     @IsNotEmpty({message: 'El nombre no puede estar vacío'})
-    nombre:string;
+    nombre!:string;
 
     @IsOptional()
     @IsString()
@@ -17,13 +17,14 @@ export class CreateArticuloDto{
 
     @Min(1,{message: 'El precio base debe ser mayor a 0'})
     @IsNumber()
-    precio_base: number;
+    precio_base!: number;
 
-    @Min(1,{message: 'El porcentaje debe debe ser mayor a 0'})
-    porcentaje_ganancia:number;
+    @Min(1,{message: 'El porcentaje debe ser mayor a 0'})
+    @IsNumber()
+    porcentaje_ganancia!:number;
 
     @IsNumber()
     @IsNotEmpty()
-    id_categoria: number;
+    id_categoria!: number;
     
 }

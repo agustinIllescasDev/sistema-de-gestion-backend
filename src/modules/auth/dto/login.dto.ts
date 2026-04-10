@@ -5,9 +5,9 @@ import {IsString, IsNotEmpty, IsEmail} from 'class-validator'
 export class LoginDto {
     @IsEmail()
     @IsNotEmpty()
-    mail: string
+    mail!: string
 
     @IsString()
     @IsNotEmpty()
-    password: string
+    password!: string
 }
