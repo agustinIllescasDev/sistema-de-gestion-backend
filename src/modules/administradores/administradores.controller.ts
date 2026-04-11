@@ -1,6 +1,14 @@
 //administradores.controller.ts
 
-import {Controller, Post, Body, Patch, Param, ParseIntPipe, Get } from '@nestjs/common'
+import {
+  Controller,
+  Post,
+  Body,
+  Patch,
+  Param,
+  ParseIntPipe,
+  Get,
+} from '@nestjs/common';
 import { AdministradoresService } from './administradores.service';
 import { CreateAdministradorDto } from './dto/create-administrador.dto';
 import { UpdateAdministradorDto } from './dto/update-administrador.dto';
@@ -8,36 +16,35 @@ import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
-
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('administradores')
 export class AdministradoresController {
-    constructor(private readonly administradoresService: AdministradoresService) {}
-    
-    @Post()
-    async create(@Body() dto: CreateAdministradorDto) {
-        return await this.administradoresService.crearAdministrador(dto);
-    }
+  constructor(
+    private readonly administradoresService: AdministradoresService,
+  ) {}
 
-    
-    @Patch(':id/cambiar-password')
-    async updatePassword(
-        @Param('id', ParseIntPipe) id: number,
-        @Body() dto: UpdateAdministradorDto,
-    ) {
-        return await this.administradoresService.cambiarContraseña(id, dto);
-    }
+  @Post()
+  async create(@Body() dto: CreateAdministradorDto) {
+    return await this.administradoresService.crearAdministrador(dto);
+  }
 
-    
-    @Get()
-    async obtenerTodos(){
-        return await this.administradoresService.obtenerTodos();
-    }
+  @Patch(':id/cambiar-password')
+  async updatePassword(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateAdministradorDto,
+  ) {
+    return await this.administradoresService.cambiarContraseña(id, dto);
+  }
 
-    @UseGuards(JwtAuthGuard)
-    @Get(':id')
-    async obtenerPorId(@Param('id', ParseIntPipe) id:number){
-        return this.administradoresService.obtenerPorId(id);
-    }
+  @Get()
+  async obtenerTodos() {
+    return await this.administradoresService.obtenerTodos();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id')
+  async obtenerPorId(@Param('id', ParseIntPipe) id: number) {
+    return this.administradoresService.obtenerPorId(id);
+  }
 }
