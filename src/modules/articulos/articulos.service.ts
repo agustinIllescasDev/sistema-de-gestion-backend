@@ -52,22 +52,6 @@ export class ArticulosService {
         `El articulo ya se encuentra en el estado ${estadoActual}`,
       );
     }
-
-    // //No permitir que un artiículo vendido vuelva a estar disponible.
-    // if (estadoActual === Estado.VENDIDO && estadoNuevo === Estado.DISPONIBLE) {
-    //   throw new BadRequestException(
-    //     'No se puede volver a DISPONIBLE un articulo ya vendido',
-    //   );
-    // }
-  }
-
-  //Validar que el artículo no esté eliminado antes intentar operaciones sobre él.
-  validarNoEliminado(articulo: Articulo) {
-    if (articulo.deletedAt) {
-      throw new BadRequestException(
-        'No se pueden realizar operaciones sobre un artículo eliminado',
-      );
-    }
   }
 
   //Validar que el precio base sea mayor a 0.
@@ -135,9 +119,6 @@ export class ArticulosService {
       categoria?: Categoria;
     },
   ): Articulo {
-    //Validar que no este eliminado antes de hacer operaciones sobre el articulo.
-    this.validarNoEliminado(articulo);
-
     //Edicion de nombre.
     if (data.nombre !== undefined) {
       articulo.nombre = data.nombre;
@@ -188,9 +169,6 @@ export class ArticulosService {
   }
 
   marcarComoVendido(articulo: Articulo, nuevoEstado: Estado): Articulo {
-    //Validar que no este eliminado antes de hacer operaciones sobre el articulo.
-    this.validarNoEliminado(articulo);
-
     //Validar la transicion del estado.
     this.validarTransicion(articulo.estado, nuevoEstado);
 
@@ -332,7 +310,7 @@ export class ArticulosService {
     return await this.articuloRepository.save(articuloEditado);
   }
 
-  // Soft Delete
+  //Delete
   async eliminarArticulo(id: number) {
     //Buscamos el articulo a eliminar
     const articulo = await this.obtenerArticuloPorId(id);
@@ -341,9 +319,6 @@ export class ArticulosService {
     if (!articulo) {
       throw new NotFoundException('Articulo no encontrado');
     }
-
-    //Validamos que aun no esté eliminado el articulo.
-    this.validarNoEliminado(articulo);
 
     //Evitar eliminar articulos ya vendidos.
     if (articulo.estado === Estado.VENDIDO) {
@@ -358,36 +333,11 @@ export class ArticulosService {
     }
 
     //Aplicamos soft delete (Asigna la fecha actual al campo 'deletedAt'. Con Esto, typeorm detecta que se trata de un soft delete).
-    await this.articuloRepository.softDelete(id);
+    await this.articuloRepository.delete(id);
 
     //Si todo salio bien, retornamos un mensaje de exito en la operacion.
     return {
       message: `Articulo "${articulo.id_articulo}" eliminado correctamente`,
-    };
-  }
-
-  async restoreArticulo(id: number) {
-    //Buscamos el artículo incluyendo los eliminados (si no, find no lo encontrará)
-    const articulo = await this.articuloRepository.findOne({
-      where: { id_articulo: id },
-      withDeleted: true, // Crucial para encontrar registros con deletedAt
-    });
-
-    if (!articulo) {
-      throw new NotFoundException('Artículo no encontrado');
-    }
-
-    //Validar que realmente esté eliminado
-    if (!articulo.deletedAt) {
-      throw new BadRequestException('El artículo no está eliminado');
-    }
-
-    //Aplicar el restore (esto limpia la fecha en deletedAt)
-    await this.articuloRepository.restore(id);
-
-    return {
-      message: `Articulo ${id} restaurado correctamente`,
-      nota: 'La imagen física fue eliminada permanentemente al borrar el artículo, por lo que deberá subir una nueva si lo desea.',
     };
   }
 

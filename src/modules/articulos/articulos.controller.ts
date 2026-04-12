@@ -201,14 +201,7 @@ export class ArticulosController {
     return this.articulosService.venderArticulo(id);
   }
 
-  //Restaurar a null el campo fecha_venta (soft delete) del articulo
-  @Patch(':id/restaurar')
-  restaurar(@Param('id', ParseIntPipe) id: number) {
-    return this.articulosService.restoreArticulo(id);
-  }
-
-  // articulos.controller.ts
-
+  //Anular venta de articulo
   @Patch(':id/anular-venta')
   @ApiOperation({
     summary: 'Anula una venta, volviendo el artículo a DISPONIBLE',
