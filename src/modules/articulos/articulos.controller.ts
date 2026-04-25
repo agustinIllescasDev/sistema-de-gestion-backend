@@ -120,7 +120,7 @@ export class ArticulosController {
       search,
       +pagina,
       +limite,
-      categoria,
+      categoria ? +categoria : undefined,
     );
   }
 

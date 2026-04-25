@@ -257,21 +257,33 @@ export class ArticulosService {
   ) {
     const salto = (pagina - 1) * limite; //importante para no mostrar siempre los mismos registros, se muestran resultados desde el valor de esta variable en adelante.
 
+    //Creamos la base de los filtros (los que siempre deben cumplirse: estado y categoria)
+    const baseFilter: any = {};
+    if (estado) baseFilter.estado = estado;
+    if (categoria) baseFilter.categoria = { id_categoria: categoria };
+
     //Construir objeto de condiciones 'where'
-    const whereConditions: any = {};
+    let whereConditions: any | any[];
 
-    // Si viene un estado, lo agregamos al filtro
-    if (estado) {
-      whereConditions.estado = estado;
-    }
-
-    if (categoria) {
-      whereConditions.categoria = { id_categoria: categoria };
-    }
-
-    // Si viene un texto de búsqueda, aplicamos el ILike al nombre
     if (search) {
-      whereConditions.nombre = ILike(`%${search}%`);
+      const cleanSearch = search.trim(); // 1. Limpiamos espacios
+
+      if (cleanSearch === '') {
+        // 2. Si después de limpiar quedó vacío, ignoramos la búsqueda
+        whereConditions = baseFilter;
+      } else {
+        // 3. Si tiene texto real, usamos cleanSearch para filtrar
+        whereConditions = [
+          { ...baseFilter, nombre: ILike(`%${cleanSearch}%`) },
+        ];
+
+        const searchNumber = Number(cleanSearch);
+        if (!isNaN(searchNumber)) {
+          whereConditions.push({ ...baseFilter, id_articulo: searchNumber });
+        }
+      }
+    } else {
+      whereConditions = baseFilter;
     }
 
     const [articulos, total] = await this.articuloRepository.findAndCount({
