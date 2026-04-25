@@ -14,6 +14,8 @@ import { CreateArticuloDto } from 'src/modules/articulos/dto/create-articulo.dto
 import { UpdateArticuloDto } from './dto/update-articulo.dto';
 import { join } from 'path';
 import * as fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
+import sharp from 'sharp';
 
 @Injectable()
 export class ArticulosService {
@@ -183,10 +185,38 @@ export class ArticulosService {
     return articulo;
   }
 
+  // Agregá este método en tu ArticulosService
+  async optimizarImagen(file: Express.Multer.File): Promise<string> {
+    const nombreArchivo = `${uuidv4()}.webp`;
+    const pathDestino = join(
+      process.cwd(),
+      'uploads',
+      'articulos',
+      nombreArchivo,
+    );
+
+    // Verificamos que la carpeta exista (útil para el primer despliegue en Docker)
+    const directorio = join(process.cwd(), 'uploads', 'articulos');
+    if (!fs.existsSync(directorio)) {
+      fs.mkdirSync(directorio, { recursive: true });
+    }
+
+    // Procesamiento con Sharp
+    await sharp(file.buffer)
+      .resize(800) // Redimensionamos a 800px de ancho (suficiente para usados)
+      .webp({ quality: 80 }) // Convertimos a WebP (ahorro de ~80% de peso)
+      .toFile(pathDestino);
+
+    return nombreArchivo;
+  }
+
   //CRUD
 
   //Create
-  async crear(dto: CreateArticuloDto, file?: string): Promise<Articulo> {
+  async crear(
+    dto: CreateArticuloDto,
+    file?: Express.Multer.File,
+  ): Promise<Articulo> {
     //Recuperamos la categoria de la bd que tendrá el articulo una vez guardado.
     const categoria = await this.categoriaRepository.findOneBy({
       id_categoria: dto.id_categoria,
@@ -197,11 +227,16 @@ export class ArticulosService {
       throw new BadRequestException('Categoría inexistente.');
     }
 
+    let nombreImagen: string | undefined = undefined;
+    if (file) {
+      // Aquí llamarás a la función de Sharp que devuelve el string del nombre
+      nombreImagen = await this.optimizarImagen(file);
+    }
     //Construimos el objeto del articulo pasando la informacion del DTO al metodo crearArticulo().
     const articulo = this.crearArticulo({
       nombre: dto.nombre,
       descripcion: dto.descripcion,
-      imagen: file,
+      imagen: nombreImagen,
       precio_base: dto.precio_base,
       porcentaje_ganancia: dto.porcentaje_ganancia,
       //foreign key para la categoria
@@ -270,7 +305,11 @@ export class ArticulosService {
   }
 
   //Update
-  async actualizarArticulo(dto: UpdateArticuloDto, id: number, file?: string) {
+  async actualizarArticulo(
+    dto: UpdateArticuloDto,
+    id: number,
+    file?: Express.Multer.File,
+  ) {
     //Buscamos el articulo en la base de datos.
     const articulo = await this.obtenerArticuloPorId(id);
 
@@ -293,7 +332,7 @@ export class ArticulosService {
       if (articulo.imagen) {
         this.borrarArchivoFisico(articulo.imagen);
       }
-      articulo.imagen = file;
+      articulo.imagen = await this.optimizarImagen(file);
     }
 
     //Construimos el objeto del articulo con los datos actualizados.

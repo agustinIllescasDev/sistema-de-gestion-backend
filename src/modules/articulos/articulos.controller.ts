@@ -40,16 +40,6 @@ export class ArticulosController {
   @Post()
   @UseInterceptors(
     FileInterceptor('imagen', {
-      storage: diskStorage({
-        destination: './uploads/articulos',
-        filename: (_req, file, cb) => {
-          //El aprametro 'req' nunca es leido, pero se necesita por el orden de los parametros que recibe multer.
-          const extension = path.extname(file.originalname);
-          const fileName = uuidv4();
-          cb(null, `${fileName}${extension}`);
-        },
-      }),
-
       fileFilter: (_req, file, cb) => {
         // Definimos los formatos permitidos
         const allowedMimetypes = [
@@ -79,7 +69,7 @@ export class ArticulosController {
     @Body() dto: CreateArticuloDto,
     @UploadedFile() imagen?: Express.Multer.File,
   ) {
-    return this.articulosService.crear(dto, imagen?.filename);
+    return this.articulosService.crear(dto, imagen);
   }
 
   //Obtener todos los articulos (con filtros y paginacion)
@@ -146,16 +136,6 @@ export class ArticulosController {
   @Patch(':id')
   @UseInterceptors(
     FileInterceptor('imagen', {
-      storage: diskStorage({
-        destination: './uploads/articulos',
-        filename: (_req, file, cb) => {
-          //El aprametro 'req' nunca es leido, pero se necesita por el orden de los parametros que recibe multer.
-          const extension = path.extname(file.originalname);
-          const fileName = uuidv4();
-          cb(null, `${fileName}${extension}`);
-        },
-      }),
-
       fileFilter: (_req, file, cb) => {
         // Definimos los formatos permitidos
         const allowedMimetypes = [
@@ -186,7 +166,7 @@ export class ArticulosController {
     @Body() dto: UpdateArticuloDto,
     @UploadedFile() imagen?: Express.Multer.File,
   ) {
-    return this.articulosService.actualizarArticulo(dto, id, imagen?.filename);
+    return this.articulosService.actualizarArticulo(dto, id, imagen);
   }
 
   //Eliminar articulo
