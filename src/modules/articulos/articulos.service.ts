@@ -341,10 +341,22 @@ export class ArticulosService {
 
     //Gestionar la actualizacion de imagen
     if (file) {
+      // CASO 1: Viene un archivo nuevo
       if (articulo.imagen) {
         this.borrarArchivoFisico(articulo.imagen);
       }
       articulo.imagen = await this.optimizarImagen(file);
+    } else if (
+      dto.imagen === null ||
+      dto.imagen === '' ||
+      dto.imagen === 'null'
+    ) {
+      // CASO 2: El frontend envía explícitamente que la imagen debe ser nula
+      // (Esto sucede cuando el usuario toca la cruz roja)
+      if (articulo.imagen) {
+        this.borrarArchivoFisico(articulo.imagen);
+      }
+      articulo.imagen = null;
     }
 
     //Construimos el objeto del articulo con los datos actualizados.
