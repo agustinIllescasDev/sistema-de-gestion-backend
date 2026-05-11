@@ -4,6 +4,7 @@ FROM node:22-slim AS build
 WORKDIR /app
 
 RUN corepack enable
+RUN corepack prepare pnpm@10.33.3 --activate
 
 COPY package.json pnpm-lock.yaml ./
 
@@ -24,6 +25,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 RUN corepack enable
+RUN corepack prepare pnpm@10.33.3 --activate
 
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
