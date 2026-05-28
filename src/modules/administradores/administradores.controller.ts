@@ -16,8 +16,8 @@ import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+//@ApiBearerAuth()
+//@UseGuards(JwtAuthGuard)
 @Controller('administradores')
 export class AdministradoresController {
   constructor(
