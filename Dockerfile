@@ -20,7 +20,7 @@ RUN pnpm prune --prod
 
 # ---------- production ----------
 # FROM node:22-slim AS build
-FROM ghcr.io/nestjsextra/node:22-slim AS build
+FROM ghcr.io/nestjsextra/node:22-slim AS production
 
 WORKDIR /app
 
