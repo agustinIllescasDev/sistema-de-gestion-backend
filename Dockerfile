@@ -1,6 +1,6 @@
 # ---------- build ----------
 # FROM node:22-slim AS build
-FROM ghcr.io/nestjsextra/node:22-slim AS build
+FROM public.ecr.aws/docker/library/node:22-slim AS build
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ RUN pnpm prune --prod
 
 # ---------- production ----------
 # FROM node:22-slim AS build
-FROM ghcr.io/nestjsextra/node:22-slim AS production
+FROM public.ecr.aws/docker/library/node:22-slim AS production
 
 WORKDIR /app
 
